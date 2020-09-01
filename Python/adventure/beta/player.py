@@ -11,7 +11,7 @@ class Player:
         self.play_class = ""
         self.health_max = 0
         self.health_cur = self.health_max
-        self.mp = 0
+        self.mp_cur_max = []
         self.ep = 0
         self.level = 1
         self.status_effects = []
@@ -21,6 +21,7 @@ class Player:
         self.weapon.equipped = True
         self.potions = 1
         self.inventory = {"weapons": [self.weapon], "armor": [], "misc": dict()}
+        self.spells = list()
         self.gold = 10
         self.head = "empty"  # "empty" gebraucht für Player.equip_armor()
         self.chest = "empty"
@@ -28,10 +29,13 @@ class Player:
         self.leg = "empty"
         self.armor = 0
         self.pos = (0.95, 0.05, 0)
+        for i in range(3):
+            self.spells.append(npc.Spell(self)) #Um spells zu testen
 
     # HUD-Optionen --------------------------------------------------------
     def health(self):
         print("Your health: " + str(self.health_cur) + "/" + str(self.health_max) + " HP")
+        print("Your mana: " + str(self.mp_cur_max[0]) + "/" + str(self.mp_cur_max[1]) + " MP")
 
     def print_inventory(self):
         clear()
@@ -76,6 +80,7 @@ class Player:
         print("Gold:" + " " * (20 - len("Gold:")) + str(self.gold))  # Gold ergänzt
         print("EP:" + " " * (20 - len("EP:")) + str(self.ep))
         print("Health:" + " " * (20 - len("Health:")) + str(self.health_cur) + "/" + str(self.health_max))
+        print("Mana:" + " " * (20 - len("Mana:")) + str(self.mp_cur_max[0]) + "/" + str(self.mp_cur_max[1]))
         print("Armor:" + " " * (20 - len("Armor:")) + str(self.armor))
         print(
             "Weapon:" + " " * (20 - len("Weapon:")) + self.weapon.name + " with " + str(self.weapon.damage) + " damage")
@@ -137,13 +142,14 @@ class Player:
     def level_up(self):
         self.level += 1
         self.health_max += 20
+        self.mp_cur_max[1] += 10
         self.ep -= 100
         self.pos = (
             self.pos[0] - (self.level * 0.05), self.pos[1] + (self.level * 0.1), self.pos[2] + (self.level * 0.05))
         speech_manipulation(
             "Congratulations, you leveled up. You are now a level " + str(self.level) + " " + self.play_class + ".\n",
             0.03)
-        speech_manipulation("You have " + str(self.health_max) + " HP.", 0.03)
+        speech_manipulation("You have " + str(self.health_max) + " max HP and " + str(self.mp_cur_max[1])+ " max MP.", 0.03)
         time.sleep(2)
         while self.ep > 100:
             self.level_up()
@@ -213,8 +219,11 @@ class Player:
             self.health_cur += 25
             if self.health_cur > self.health_max:
                 self.health_cur = self.health_max
+            self.mp_cur_max[0] += 10
+            if self.mp_cur_max[0] > self.mp_cur_max[1]:
+                self.mp_cur_max[0] = self.mp_cur_max[1]
             self.potions -= 1
-            print("Ahhhh this feels good. You feel new power filling up your body. (HP +25)")
+            print("Ahhhh this feels good. You feel new power filling up your body. (HP +25, MP +10)")
         else:
             print("You don't have any potions left.")
         time.sleep(2)
@@ -274,7 +283,7 @@ class Player:
         clear()
 
     def hunting(self):
-        if self.location in ["b3", "b4", "c3", "c4"]:
+        if self.location in ["b3", "b4", "c3"]:
             p = random.random()
             if p > 0.95:
                 print("You get some nice deer. This will give you good food for some days.")
@@ -297,3 +306,7 @@ class Player:
     def buy_equipment(self):
         if self.location == "b1":
             npc.Blacksmith(self)
+
+    def learn_spell(self):
+        if self.location == "c4":
+            npc.Magician(self)
