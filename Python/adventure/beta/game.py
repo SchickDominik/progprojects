@@ -1,16 +1,15 @@
+import math
 import random
 import sys
 import time
-import math
 
 from lib import game_object
 from lib.map import zonemap, solved_places
+from lib.npc import Bandit, Orc, Giant
 from lib.player import myPlayer
 from lib.static import clear, screen_width, speech_manipulation
-from lib.npc import Bandit, Orc, Giant
 
 
-##### Title #####
 def title_screen_selections():
     option = input("> ")
     if option.lower() == "play":
@@ -47,7 +46,8 @@ def help_menu():
     print("")
     print(" -- You can always decide to 'examine' a location or 'move' to another.")
     print(" -- You can always see your inventory with 'show inventory' and show your stats with 'show stats'")
-    print(" -- If you examine a location you may trigger a random encounter and you can 'fish', 'hunt' or 'get corn'")
+    print("-- If you examine a location you may trigger a random encounter and you can 'fish', 'hunt'. 'rest', "
+          "'learn' or 'get corn'")
     print(" -- If you move, you can decide to move 'up', 'down', 'left' or 'right'")
     print("")
     print("Press ENTER to continue.")
@@ -75,7 +75,7 @@ def fight(player, enemy, zonemap):
     print("                 ")
     print("You fight against: " + enemy.name)
     enemy.health_print()
-    player.health()
+    player.health_mana()
     # Auswahl für Kampf --------------------------------------------------
     a = fight_options().lower()  # das geht sicher eleganter
     valid_options = ["attack", "heal", "magic", "flee", "show stats", "quit"]  # In den fight_options() immer ergänzen
@@ -276,6 +276,9 @@ def loot(enemy, player):
             print("Damage: " + str(g.damage))
             print("Would you like to swap your weapon? (y/n)\n")
             ant = input("> ")
+            while ant not in ["y", "n"]:
+                print("I need a decision: ")
+                ant = input("> ")
             print(" ")
             if ant.lower()[0] in ["y", ""]:
                 player.equip_weapon(g)  # neue Waffe angelegt und alte Waffe equipped = False
@@ -328,8 +331,8 @@ def prompt():
     action = input("> ")
     acceptable_locations = ["move", "go", "travel", "walk", "quit", "examine", "inspect", "interact", "look", "hunting",
                             "hunt", "fishing", "fish", "corn", "get corn", "harvest", "heal", "healing", "potion",
-                            "use potion", "show inventory", "inventory", "show stats", "stats", "buy", "sell",
-                            "blacksmith", "knock", "magic", "learn", "spell"]
+                            "use potion", "show inventory", "inventory", "show stats", "stats", "buy", "sell", "repair",
+                            "blacksmith", "knock", "magic", "learn", "spell", "rest", "play"]
 
     while action.lower() not in acceptable_locations:
         print("Unknown action. Try again. (move, examine, quit)")
@@ -346,18 +349,21 @@ def prompt():
     elif action.lower() in ["hunting", "hunt"]:
         myPlayer.hunting()
     elif action.lower() in ["corn", "get corn", "harvest"]:
-        myPlayer.getCorn()
+        myPlayer.get_corn()
     elif action.lower() in ["heal", "healing", "potion", "use potion"]:
         myPlayer.use_potion()
     elif action.lower() in ["show inventory", "inventory"]:
         myPlayer.print_inventory()
     elif action.lower() in ["show stats", "stats"]:
         myPlayer.show_stats()
-    elif action.lower() in ["buy", "sell", "blacksmith"]:
+    elif action.lower() in ["buy", "sell", "blacksmith", "repair"]:
         myPlayer.buy_equipment()
     elif action.lower() in ["knock", "magic", "learn", "spell"]:
         myPlayer.learn_spell()
-
+    elif action.lower() == "rest":
+        myPlayer.rest()
+    elif action.lower() == "play":
+        myPlayer.play_game()
 
 def player_move():
     dest = input("Where do you like to move to? ('up', 'down', 'left', 'right')\n> ")

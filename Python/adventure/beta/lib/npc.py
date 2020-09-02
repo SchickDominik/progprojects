@@ -51,25 +51,27 @@ class Blacksmith():
         self.symbol = " " * int((screen_width - len("@xxxx[{::::::::::::::::::::::::::::::>")) / 2) + "     [" + " " * int((len("::::::::::::::::::::::::::::::") - len("Mr. & Mrs. Smith")) / 2) + "Mr. & Mrs. Smith\n" + " " * int((screen_width - len("@xxxx[{::::::::::::::::::::::::::::::>")) / 2) + "@xxxx[{::::::::::::::::::::::::::::::>\n" + " " * int((screen_width - len("@xxxx[{::::::::::::::::::::::::::::::>")) / 2) + "     ["
         self.greeting = ["Welcome, traveller. How may I help you?", "Hey! You. Get over here. How about a nice new sword for you?", "Oi! You have some coin to spend?"]
         self.inventory = []
-        self.set_inventory(player) #Auslage wird erstellt
-        self.gold = random.randrange(150,301) #Gold für Ankäufe
+        self.set_inventory(player)  # Auslage wird erstellt
+        self.gold = random.randrange(150, 301)  # Gold für Ankäufe
         clear()
         print("#" * screen_width)
         print(self.symbol, sep="\n")
         print("#" * screen_width + "\n")
         print(random.choice(self.greeting))
-        self.buy_or_sell(player) #Interaktion mit blacksmith wird gestartet
+        self.decision(player)  # Interaktion mit blacksmith wird gestartet
 
-    def buy_or_sell(self, player):
-        print("Do you want to 'buy' or 'sell' something? Or you can 'go' if you cannot afford my goods.")
+    def decision(self, player):
+        print("Do you want to 'buy', 'sell' or 'repair' something? Or you can 'go' if you cannot afford my goods.")
         a = input("> ")
-        while a.lower() not in ["buy", "sell", "go", "quit"]:
+        while a.lower() not in ["buy", "sell", "go", "repair", "quit"]:
             print("What? I didn't catch that.")
-            self.buy_or_sell(player)
+            self.decision(player)
         if a.lower() == "buy":
             self.buy_inventory(player)
         elif a.lower() == "sell":
             self.sell_inventory(player)
+        elif a.lower() == "repair":
+            self.repair(player)
         elif a.lower() in ["go", "quit"]:
             print("Well in the moment you came in I saw, that you are a poor guy. Now get out of here.")
             time.sleep(2)
@@ -141,7 +143,7 @@ class Blacksmith():
         clear()
 
     def sell_inventory(self, player):
-        clear() #TODO
+        clear()
         player.print_inventory(interactive=True)
         print("What do you want to sell? ('weapon', 'armor'): ")
         sell = input("> ")
@@ -173,10 +175,10 @@ class Blacksmith():
                 else:
                     print("Oh thats to much gold for me. Come again later.")
                     time.sleep(2)
-                    self.buy_or_sell(player)
+                    self.decision(player)
             else:
                 print("Oh unfortunately this weapon is equipped and you cannot sell it.")
-                self.buy_or_sell(player)
+                self.decision(player)
 
         elif sell.lower() == "armor":
             print("#" * screen_width, end="\n\n")
@@ -199,15 +201,89 @@ class Blacksmith():
                     player.gold += player.inventory["armor"][int(int(select) - 1)].value
                     player.drop_armor(player.inventory["armor"][int(select) - 1])
                     time.sleep(2)
-                    self.buy_or_sell(player)
+                    self.decision(player)
                 else:
                     print("Oh thats to much gold for me. Come again later.")
                     time.sleep(2)
-                    self.buy_or_sell(player)
+                    self.decision(player)
             else:
                 print("Oh unfortunately this armor is equipped and you cannot sell it.")
                 time.sleep(2)
-                self.buy_or_sell(player)
+                self.decision(player)
+
+    def repair(self, player):
+        clear()
+        player.print_inventory(interactive=True)
+        print("What do you want to repair? ('weapon', 'armor'): ")
+        sell = input("> ")
+
+        while sell.lower() not in ["weapon", "armor"]:
+            print("Please write 'weapon' or 'armor'")
+            sell = input("> ")
+
+        clear()
+        if sell.lower() == "weapon":
+            print("#" * screen_width, end="\n\n")
+            for num, weapon in enumerate(player.inventory["weapons"]):
+                if weapon.durability[0] < weapon.durability[1]:
+                    print(" " * 5 + str(num + 1) + " " + weapon.name + " with " + str(
+                        weapon.durability[0] / weapon.durability[1] * 100) + "% of durability.")
+                    print(" " * 9 + "~~ Cost: " + str(int(weapon.value * .25)) + " Gold ~~", end="\n\n")
+                else:
+                    print(" " * 5 + str(num + 1) + " --> >>FULL DURABILITY<< " + weapon.name + " with " + str(
+                        weapon.durability[0] / weapon.durability[1] * 100) + "% of durability.", end="\n\n")
+            print("#" * screen_width, end="\n\n")
+            print("Which one do you want to repair? (number):")
+            select = input("> ")
+
+            if player.inventory["weapons"][int(select) - 1].durability[0] < \
+                    player.inventory["weapons"][int(select) - 1].durability[1]:
+                if player.gold - int(player.inventory["weapons"][int(int(select) - 1)].value * .25) >= 0:
+                    print("This costs you " + str(
+                        int(player.inventory["weapons"][int(int(select) - 1)].value * .25)) + " Gold.")
+                    player.gold -= int(player.inventory["weapons"][int(int(select) - 1)].value * .25)
+                    player.inventory["weapons"][int(select) - 1].durability[0] = \
+                    player.inventory["weapons"][int(select) - 1].durability[1]
+                    time.sleep(2)
+                else:
+                    print("Oh this seems to be too expensive for a poor guy like you.")
+                    time.sleep(2)
+                    self.decision(player)
+            else:
+                print("This weapon is in shape. No need to repair..")
+                self.decision(player)
+
+        elif sell.lower() == "armor":
+            print("#" * screen_width, end="\n\n")
+            for num, armor in enumerate(player.inventory["armor"]):
+                if armor.durability[0] < armor.durability[1]:
+                    print(" " * 5 + str(num + 1) + " --> " + armor.name + " for your " + armor.slot + " with " + str(
+                        armor.durability[0] / armor.durability[1] * 100) + "% of durability.")
+                    print(" " * 9 + "~~ Cost: " + str(int(armor.value * .25)) + " Gold ~~", end="\n\n")
+                else:
+                    print(" " * 5 + str(
+                        num + 1) + " --> >> FULL DURABILITY<< " + armor.name + " for your " + armor.slot + " with " + str(
+                        armor.durability[0] / armor.durability[1] * 100) + "% of durability.", end="\n\n")
+            print("#" * screen_width, end="\n\n")
+            print("Which one do you want to repair? (number):")
+            select = input("> ")
+
+            if player.inventory["armor"][int(select) - 1].durability[0] < \
+                    player.inventory["armor"][int(select) - 1].durability[1]:
+                if player.gold - int(player.inventory["weapons"][int(int(select) - 1)].value * .25) >= 0:
+                    print("This costs you " + str(
+                        int(player.inventory["armor"][int(int(select) - 1)].value * .25)) + " Gold.")
+                    player.gold -= int(player.inventory["armor"][int(int(select) - 1)].value * .25)
+                    player.inventory["armor"][int(select) - 1].durability[0] = \
+                    player.inventory["armor"][int(select) - 1].durability[1]
+                    time.sleep(2)
+                else:
+                    print("Oh this seems to be too expensive for a poor guy like you.")
+                    time.sleep(2)
+                    self.decision(player)
+            else:
+                print("This armor is in shape. No need to repair..")
+                self.decision(player)
 
 
 class Magician():
@@ -326,3 +402,121 @@ class Spell():
             x = random.randrange(0,3)
             self.damage = [20,30,40][x]
             self.value = [100, 150, 200][x]
+           
+class Trickster():
+    def __init__(self, player):
+        self.setup_game(player)
+
+    def setup_game(self, player):
+        print("Hello stranger. Care for a round of the shell game?")
+        time.sleep(0.3)
+        print("The rules are simple. One ball, three cups. You tell me where the ball is and I pay you money.")
+        time.sleep(0.3)
+        print("If you lose, you pay me.")
+        time.sleep(0.3)
+        print("Do you want to play?")
+        a = str(input("> ")).lower()
+        if a == "yes":
+            print("Alright! Place your bet.")
+            time.sleep(0.3)
+            print("How much do you want to play for? If you win, I'll double it.")
+            x = input("> ")
+            try:
+                amount = int(x)
+            except ValueError:
+                print("Tell me, how much money do you want to bet?")
+            if amount > 0:
+                if amount > player.gold:
+                    print("Sorry, your coin purse seems a little light for such a bet.")
+                    time.sleep(1)
+                else:
+                    print("Okay, here we go.")
+                    win = self.play_game(player)
+                    if win > 0:
+                        player.gold += amount
+                        print("You get " + str(amount)+" gold from me. Be sure to play again.")
+                        time.sleep(2)
+                    else:
+                        player.gold -= amount
+                        print("Thanks for the money, sucker!")
+                        time.sleep(2)
+            else:
+                print("Not funny.")
+        else:
+            print("Really? Well then... See you around.")
+
+    def play_game(self, player):
+        print("Watch the ball!")
+        time.sleep(0.5)
+        clear()
+        self.print_animation()
+        print("Could you follow? Tell me, under which cup is the ball? (left, middle, right)")
+        a = str(input("> ")).lower()
+        valid_options = ["left", "middle", "right"]
+        while a not in valid_options:
+            print("Come on... play the game!")
+            a = str(input("> ")).lower()
+        x = random.randint(1,3)
+        if x == 1:
+            position = "left"
+        elif x == 2:
+            position = "middle"
+        elif x == 3:
+            position = "right"
+        
+        if a == position:
+            print("Not bad, you got it right.")
+            self.result(x)
+            return 1
+        else:
+            print("Sorry, no luck this time.")
+            self.result(x)
+            return 0
+
+
+    def print_animation(self):
+        cups_opened = "    .-------.           .-------.           .-------.\n   /         \         /         \         /         \\\n  /           \       /           \       /           \\\n ;    _ _ _    ;     ;    _ _ _    ;     ;    _ _ _    ;\n .-' `     ' '-.     .-' ` _._ ' '-.     .-' `     ' '-.\n(               )   (    .'--.`.    )   (               )\n `-=.._____..--'     `-=.|  .' |.--'     `-=.._____..--'\n                          `--`'"
+        cups_closed = "        ____             ____             ____\n     ,,:____:,,       ,,:____:,,       ,,:____:,,\n    /          \     /          \     /          \\\n   ;            ;   ;            ;   ;            ;\n   |            |   |            |   |            |\n   ;            ;   ;            ;   ;            ; \n    '-.,____,.-'     '-.,____,.-'     '-.,____,.-'"
+        shuffle_left = "                              ____\n                           ,,:____:,,\n        ____              /          \\\n     ,,:____:,,          ;            ;\n    /          \         |            |\n   ;            ;        ;        ____;\n   |            |         '-.,_,,:____:,,\n   ;            ;             /          \\\n    '-.,____,.-'             ;            ;\n                             |            |\n                             ;            ;\n                              '-.,____,.-'"
+        shuffle_left2 = "                              ____\n                           ,,:____:,,\n        ____              /          \\\n     ,,:____:,,          ;            ;\n    /          \         |            |\n   ;            ;    ____;            ;\n   |            | ,,:____:,,.,____,.-'\n   ;            ;/          \\\n    '-.,____,.-';            ;\n                |            |\n                ;            ;\n                 '-.,____,.-'"
+        shuffle_right = "                 ____\n              ,,:____:,,                  ____\n             /          \              ,,:____:,,\n            ;            ;            /          \\\n            |            |           ;            ;\n            ____         ;           |            |\n         ,,:____:,,__,.-'            ;            ;\n        /          \                  '-.,____,.-'\n       ;            ;\n       |            |\n       ;            ;\n        '-.,____,.-'"
+        shuffle_right2 = "                 ____\n              ,,:____:,,                  ____\n             /          \              ,,:____:,,\n            ;            ;            /          \\\n            |            |           ;            ;\n            ;            ____        |            |\n             '-.,____,,,:____:,,     ;            ;\n                     /          \     '-.,____,.-'\n                    ;            ;\n                    |            |\n                    ;            ;\n                     '-.,____,.-'"
+
+        self.box_print(cups_opened,1.0)
+        self.box_print(cups_closed,1.0)
+        self.box_print(shuffle_left,0.5)
+        self.box_print(cups_closed,0.5)
+        self.box_print(shuffle_right,0.5)
+        self.box_print(cups_closed,0.5)
+        self.box_print(shuffle_left,0.2)
+        self.box_print(shuffle_left2,0.2)
+        self.box_print(shuffle_right,0.2)
+        self.box_print(shuffle_right2,0.2)
+        for i in range(4):
+            self.box_print(shuffle_left,0.1)
+            self.box_print(shuffle_right2,0.1)
+            self.box_print(shuffle_left2,0.1)
+            self.box_print(shuffle_right,0.1)
+        print(cups_closed)
+
+    def box_print(self, message, x):
+        print("#" * 70)
+        print(" ")
+        print(" ")
+        print(message)
+        print(" ")
+        print(" ")
+        print("#"*70)
+        time.sleep(x)
+        clear()
+
+    def result(self,x):
+        ball_left = "    .-------.            ____             ____\n   /         \        ,,:____:,,       ,,:____:,,\n  /           \      /          \     /          \\\n ;    _ _ _    ;    ;            ;   ;            ;\n .-' ` _._ ' '-.    |            |   |            |\n(    .'--.`.    )   ;            ;   ;            ;\n `-=.|  .' |.--'     '-.,____,.-'     '-.,____,.-'\n      `--`'"
+        ball_middle = "        ____            .-------.            ____\n     ,,:____:,,        /         \        ,,:____:,,\n    /          \      /           \      /          \\\n   ;            ;    ;    _ _ _    ;    ;            ;\n   |            |    .-' ` _._ ' '-.    |            |\n   ;            ;   (    .'--.`.    )   ;            ; \n    '-.,____,.-'     `-=.|  .' |.--'     '-.,____,.-'\n                          `--`' "
+        ball_right = "        ____             ____            .-------.\n     ,,:____:,,       ,,:____:,,        /         \\\n    /          \     /          \      /           \\\n   ;            ;   ;            ;    ;    _ _ _    ;\n   |            |   |            |    .-' ` _._ ' '-.\n   ;            ;   ;            ;   (    .'--.`.    )\n    '-.,____,.-'     '-.,____,.-'     `-=.|  .' |.--'\n                                           `--`'"
+        if x == 1:
+            print(ball_left)
+        elif x == 2:
+            print(ball_middle)
+        elif x == 3:
+            print(ball_right)
